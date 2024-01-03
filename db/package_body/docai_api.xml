@@ -812,6 +812,7 @@
        ,p_payload_j     => l_document_res
        ,p_ref_key       => 'DOCAI_DOCUMENT'
        ,p_ref_id        => p_document_id
+       ,p_services      => get_document_services(p_document_id)
       );
 
       BEGIN
@@ -861,6 +862,7 @@
        ,p_payload_j     => l_document_res
        ,p_ref_key       => 'DOCAI_DOCUMENT'
        ,p_ref_id        => p_document_id
+       ,p_services      => get_document_services(p_document_id)
       );
     ELSE 
       docai_log_api.log(
