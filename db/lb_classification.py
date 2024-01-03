@@ -123,7 +123,7 @@ def preparefile(file_path,schema,author):
             else:
                 filedata_new = re.sub('id="(\w|\d)+"','id="'+obj_type+'-'+obj_name+'"',filedata)
             filedata_new = re.sub('author="(\w|\d|\(|\)|-)+"','author="'+author+'"',filedata_new)
-            filedata_new = re.sub('ownerName="(\w|\d)+"','ownerName="'+author+'"',filedata_new)
+            filedata_new = re.sub('ownerName="(\w|\d)+"','ownerName="'+author+'" replaceIfExists="true"',filedata_new)
             filedata_new = re.sub('"'+schema+'".','',filedata_new)
             filedata_new = re.sub('failOnError="false" ','failOnError="true" runOnChange="true" ',filedata_new)
 

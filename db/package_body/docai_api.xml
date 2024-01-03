@@ -5,8 +5,8 @@
 	xmlns:n0="http://www.oracle.com/xml/ns/dbchangelog-ext" 
 	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
 	http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.9.xsd">
-	<changeSet id="docai-package_body-docai_api" author="VAI" failOnError="true" runOnChange="true"    >
-		<n0:createOraclePackageBody objectName="DOCAI_API" objectType="package_body" ownerName="VAI" replaceIfExists="true">
+	<changeSet id="package_body-docai_api" author="VAI" failOnError="true" runOnChange="true"    >
+		<n0:createOraclePackageBody objectName="DOCAI_API" objectType="package_body" ownerName="VAI" replaceIfExists="true"   >
 			<n0:source><![CDATA[CREATE OR REPLACE EDITIONABLE PACKAGE BODY "DOCAI_API" AS
   g_wss_url         VARCHAR2(1000) := vai_config_api.get('VAI_WEB_SOCKET_URL');
   g_wss_wallet      VARCHAR2(1000) := vai_config_api.get('VAI_WEB_SOCKET_WALLET');
@@ -540,7 +540,6 @@
   PROCEDURE bg_process_documents(p_tenant_id  IN NUMBER,
                                  p_batch_id   IN VARCHAR2)
   IS
-  PRAGMA AUTONOMOUS_TRANSACTION;
     l_batch_id VARCHAR2(4000) := p_batch_id;
 
     /* Rest variables*/
@@ -635,11 +634,7 @@
             COMMIT;
         END LOOP;
     $ELSE
-        dbms_scheduler.create_job(job_name            => 'VAI_DOCAI_UPLOAD_'||l_batch_id,
-                                  job_type            => 'PLSQL_BLOCK',
-                                  job_action          => 'BEGIN docai_engine_api.process_documents(p_tenant_id => '||p_tenant_id||', p_batch_id => '''||l_batch_id||'''); END;',
-                                  start_date          => systimestamp,
-                                  enabled             => TRUE);
+        docai_engine_api.process_documents(p_tenant_id => p_tenant_id, p_batch_id => l_batch_id);
     $END                             
   END bg_process_documents;
 
@@ -766,6 +761,8 @@
             ,title = l_title
             ,summary = l_summary
             ,category_id = l_category_id 
+            ,status_additional_info = NULL
+            ,status_stacktrace = NULL
        WHERE tenant_id = p_tenant_id
          AND document_id = l_document_id; 
       COMMIT;
@@ -1446,14 +1443,14 @@
     SELECT org_id INTO l_id
     FROM vai_orgs
     WHERE UPPER(code) = UPPER(p_code);
-    
+
     RETURN l_id;
-    
+
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             RETURN NULL;
   END;
-  
+
   FUNCTION get_location_id(p_code IN VARCHAR2)
   RETURN NUMBER
   IS
@@ -1462,14 +1459,14 @@
     SELECT location_id INTO l_id
     FROM vai_locations
     WHERE UPPER(location_code) = UPPER(p_code);
-    
+
     RETURN l_id;
-    
+
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             RETURN NULL;
   END;
-  
+
   FUNCTION get_dept_id(p_code IN VARCHAR2)
   RETURN NUMBER
   IS
@@ -1478,14 +1475,14 @@
     SELECT department_id INTO l_id
     FROM vai_departments
     WHERE UPPER(department_code) = UPPER(p_code);
-    
+
     RETURN l_id;
-    
+
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             RETURN NULL;
   END;
-  
+
   FUNCTION get_service_id(p_service_key IN VARCHAR2)
   RETURN NUMBER
   IS
@@ -1494,14 +1491,14 @@
     SELECT service_id INTO l_id
     FROM vai_services
     WHERE UPPER(service_key) = UPPER(p_service_key);
-    
+
     RETURN l_id;
-    
+
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             RETURN NULL;
   END;
-  
+
   PROCEDURE process_webhook(p_content_body          IN CLOB) 
   IS
     l_res                   JSON_OBJECT_T;
@@ -1605,7 +1602,7 @@
             );
         END IF;
     END IF;
-    
+
     IF l_res.get_string('notification_type') = 'EMAIL_INBOUND_NEW_EMAIL' THEN
         l_filename := l_res.get_object('payload').get_string('filename');
         l_mimetype := l_res.get_object('payload').get_string('mime_type');
@@ -1628,7 +1625,7 @@
                           ,p_batch_id      => l_batch_id);
 
     END IF;
-    
+
     IF l_res.get_string('notification_type') = 'GDRIVE_INBOUND_NEW_FILE' THEN
         l_filename := l_res.get_object('payload').get_string('filename');
         l_mimetype := l_res.get_object('payload').get_string('mime_type');
